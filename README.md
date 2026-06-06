@@ -27,4 +27,5 @@ By default, the plugin will try to use `vlc` to capture the webcam feed. If `vlc
 
 ## License
 
+GNU AGPLv3
 

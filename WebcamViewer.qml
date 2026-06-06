@@ -8,7 +8,8 @@ import qs.Modules.Plugins
 PluginComponent {
     id: root
 
-    layerNamespacePlugin: "webcam-viewer"
+    pluginId: "webcamViewer"
+    layerNamespacePlugin: "webcamViewer"
 
     // -----------------------------------------------------------------------
     // Player settings

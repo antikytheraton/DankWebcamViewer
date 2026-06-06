@@ -8,6 +8,8 @@ A [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) plugin t
 
 ### Nix (flake)
 
+WIP ⚒️
+
 ### Manual
 
 Copy the plugin folder to `~/.config/DankMaterialShell/plugins/DankWebcamViewer/` and restart DankMaterialShell.

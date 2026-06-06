@@ -1,0 +1,21 @@
+{
+  "id": "webcamViewer",
+  "name": "Webcam Viewer",
+  "description": "Shows RTSP camera streams via vlc/ffplay/mpv from the DankBar",
+  "version": "1.0.0",
+  "author": "antikytheraton",
+  "icon": "videocam",
+  "type": "widget",
+  "component": "./WebcamViewer.qml",
+  "settings": "./WebcamViewerSettings.qml",
+  "permissions": [
+    "settings_read",
+    "settings_write",
+    "process"
+  ],
+  "requires": [
+    "vlc",
+    "mpv",
+    "ffmpeg"
+  ]
+}

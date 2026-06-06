@@ -23,3 +23,60 @@ jobs:
       - name: Run plugin tests
         if: ${{ hashFiles('test.sh') != '' }}
         run: bash test.sh
+
+  release:
+    name: Release
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Read plugin version
+        id: version
+        run: |
+          VERSION=$(python -c "import json; print(json.load(open('plugin.json', encoding='utf-8'))['version'])")
+          echo "version=v${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Auto-tag release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          TARGET_SHA="$(git rev-parse HEAD)"
+
+          if gh api "repos/${GITHUB_REPOSITORY}/git/refs/tags/${VERSION}" > /dev/null 2>&1; then
+            echo "Tag $VERSION already exists, skipping tag creation."
+          else
+            echo "Creating tag ${VERSION} pointing to ${TARGET_SHA}"
+            gh api \
+              --method POST \
+              "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref="refs/tags/${VERSION}" -f sha="${TARGET_SHA}" > /dev/null
+          fi
+
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          TARGET_SHA="$(git rev-parse HEAD)"
+
+          if gh release view "${VERSION}" >/dev/null 2>&1; then
+            gh release edit "$VERSION" \
+              --draft=false \
+              --prerelease=false \
+              --latest \
+              --target "${TARGET_SHA}" \
+              --verify-tag
+          else
+            gh release create "${VERSION}" \
+              --target "${TARGET_SHA}" \
+              --latest \
+              --verify-tag \
+              --generate-notes
+          fi

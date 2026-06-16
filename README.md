@@ -6,9 +6,9 @@ A [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) plugin t
 
 ## Installation
 
-### Nix (flake)
-
-WIP ⚒️
+```
+dms plugins install webcamViewer
+```
 
 ### Manual
 

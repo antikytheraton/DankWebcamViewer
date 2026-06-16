@@ -2,7 +2,7 @@
 
 A [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) plugin that shows a webcam feed in a window. It can be used to monitor a webcam feed while working on other tasks.
 
-![Screenshot](./assets/screenshot-plugin.png)
+![Screenshot](./assets/screenshot.png)
 
 ## Installation
 

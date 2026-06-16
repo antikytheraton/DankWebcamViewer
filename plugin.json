@@ -2,7 +2,7 @@
   "id": "webcamViewer",
   "name": "Webcam Viewer",
   "description": "Shows RTSP camera streams via vlc/ffplay/mpv from the DankBar",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "AGPL-3.0-or-later",
   "author": "antikytheraton",
   "icon": "videocam",

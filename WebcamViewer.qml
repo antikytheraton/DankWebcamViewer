@@ -16,9 +16,9 @@ PluginComponent {
     // -----------------------------------------------------------------------
     property string player: pluginData.player || "vlc"
     property var players: ({
-            vlc: (title, url) => "vlc --qt-start-minimized --meta-title='" + title + "' '" + url + "'",
-            ffplay: (title, url) => "ffplay -rtsp_transport tcp -window_title '" + title + "' '" + url + "' -loglevel error -an",
-            mpv: (title, url) => "mpv --no-terminal --mute=yes --title=" + title + " " + url
+            vlc: (title, url) => ["vlc", "--qt-start-minimized", "--meta-title=" + title, url],
+            ffplay: (title, url) => ["ffplay", "-rtsp_transport", "tcp", "-window_title", title, url, "-loglevel", "error", "-an"],
+            mpv: (title, url) => ["mpv", "--no-terminal", "--mute=yes", "--title=" + title, url]
         })
     // -----------------------------------------------------------------------
     // Camera list
@@ -48,6 +48,14 @@ PluginComponent {
         return !!runningStreams[name];
     }
 
+    // Always return a NEW object so runningStreams change notification fires
+    // even on Quickshell builds that suppress self-assignment (runningStreams = runningStreams).
+    function cloneStreams() {
+        const c = {};
+        for (const k in runningStreams) c[k] = runningStreams[k];
+        return c;
+    }
+
     function strippedUrl(url) {
         const u = url.replace(/\/\/[^@]+@/, "//");
         return u.length > 38 ? u.substring(0, 35) + "…" : u;
@@ -60,19 +68,20 @@ PluginComponent {
             // already open
 
             return;
-        const title = cam.name.replace(/'/g, "'\\''");
-        const url = cam.url.replace(/'/g, "'\\''");
+        const title = cam.name;
+        const url = cam.url;
         const buildCmd = players[player];
 
         const proc = processComponent.createObject(root, {
             cameraName: cam.name,
-            command: ["sh", "-c", buildCmd(title, url)]
+            command: buildCmd(title, url)
         });
         proc.running = true;
 
         // store & notify
-        runningStreams[cam.name] = proc;
-        runningStreams = runningStreams;   // trigger binding refresh
+        const next = cloneStreams();
+        next[cam.name] = proc;
+        runningStreams = next;   // fresh reference — triggers binding refresh
         activeCount = Object.keys(runningStreams).length;
 
         ToastService.showInfo("Webcam Viewer", "Opening " + cam.name + "…");
@@ -83,8 +92,9 @@ PluginComponent {
         if (!proc)
             return;
         proc.running = false;
-        delete runningStreams[name];
-        runningStreams = runningStreams;
+        const next = cloneStreams();
+        delete next[name];
+        runningStreams = next;   // fresh reference — triggers binding refresh
         activeCount = Object.keys(runningStreams).length;
         ToastService.showInfo("Webcam Viewer", name + " stopped.");
     }
@@ -105,8 +115,9 @@ PluginComponent {
             property string cameraName: ""
 
             onExited: {
-                delete runningStreams[cameraName];
-                runningStreams = runningStreams;
+                const next = cloneStreams();
+                delete next[cameraName];
+                runningStreams = next;   // fresh reference — triggers binding refresh
                 activeCount = Object.keys(runningStreams).length;
                 destroy();
             }
@@ -283,8 +294,6 @@ PluginComponent {
                         required property int index
 
                         property bool live: root.isRunning(modelData.name)
-                        // force re-evaluation when runningStreams changes
-                        property var _watch: root.runningStreams
 
                         width: (popout.width - Theme.spacingS * 3) / 2
                         height: camCard.width * 0.65

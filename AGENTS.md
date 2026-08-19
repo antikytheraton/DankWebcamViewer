@@ -22,9 +22,11 @@ Plugin id: `webcamViewer`. License: AGPL-3.0-or-later.
 The camera list is read from `pluginData.cameras` (an array of `{ name, url, enabled }`) and passed through `enabledCameras = cameras.filter(c => c.enabled !== false)`. The player is selected via `pluginData.player` and defaults to `vlc`.
 
 ### Launching a stream (`WebcamViewer.qml`)
-Per-player shell command builders are stored in the `players` object (`vlc` / `ffplay` / `mpv`). `launchCamera()` creates a `Process` object from `processComponent`, sets `proc.running = true`, and records it in `runningStreams[name]`. `stopCamera()` sets `proc.running = false`, deletes the entry, and shows a `ToastService` message. When a process exits (e.g. player window closed) its `onExited` handler cleans up its own `runningStreams` entry.
+Per-player arg-array builders are stored in the `players` object (`vlc` / `ffplay` / `mpv`). `launchCamera()` creates a `Process` object from `processComponent`, sets `command` to that arg array, sets `proc.running = true`, and records it in `runningStreams[name]`. `stopCamera()` sets `proc.running = false`, deletes the entry, and shows a `ToastService` message. When a process exits (e.g. player window closed) its `onExited` handler cleans up its own `runningStreams` entry.
 
 Base `Process` comes from `import Quickshell.Io`.
+
+> **Gotcha:** `Process` is exec'd directly (no `sh -c` wrapper). Setting `running = false` sends `SIGTERM` only to that single process — never to children of a shell. Wrapping commands in a shell would leave the actual player running as an orphaned child and break closing the window (this happens on distros whose `/bin/sh` forks instead of `exec`-ing, e.g. NixOS). Passing arguments as an array (not a string) also avoids shell injection/quoting bugs.
 
 ### Live-state bookkeeping
 - `runningStreams` maps "camera name" → `Process`.
@@ -41,7 +43,7 @@ There is no raw `TextInput` widget exposed in the settings context, so name/URL 
 
 ## Conventions & gotchas
 
-- Reassign a QML property to force binding refresh after mutation, e.g. `runningStreams = runningStreams;` — this pattern is used deliberately to re-evaluate `live`, `barLabel`, etc.
+- Always assign a **fresh object reference** to `runningStreams` via `cloneStreams()` (spread/clone into a new object) rather than mutating and doing `runningStreams = runningStreams`. On newer Quickshell builds, self-assigning a `var` to the same object is treated as no-op and never fires `runningStreamsChanged`, so bindings like `live`/`isRunning()` on camera cards go stale (the bar still updates because `activeCount` is a real int change). Assigning a new object guarantees the change notification fires on every version.
 - Start with `Theme.*` tokens and the shared widgets (`StyledText`, `StyledRect`, `DankIcon`, `PopoutComponent`, `ToastService`) from `qs.Common` / `qs.Widgets` / `qs.Services` — do not introduce new styling primitives.
 - `plugin.json` `id`, `component`, and `settings` paths must stay consistent with the QML `pluginId` (enforced by `test.sh`).
 - Keep `version` in `plugin.json` in semver format.

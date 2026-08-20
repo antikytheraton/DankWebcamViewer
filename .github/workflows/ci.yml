@@ -51,18 +51,18 @@ jobs:
       - name: Create GitHub release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_name }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if gh release view "${TAG}" >/dev/null 2>&1; then
-            gh release edit "${TAG}" \
+          if gh release view "${VERSION}" >/dev/null 2>&1; then
+            gh release edit "${VERSION}" \
               --draft=false \
               --prerelease=false \
               --latest \
               --verify-tag
           else
-            gh release create "${TAG}" \
+            gh release create "${VERSION}" \
               --latest \
-              --target "${TAG}" \
+              --target "${VERSION}" \
               --verify-tag \
               --generate-notes
           fi

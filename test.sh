@@ -73,6 +73,23 @@ assert_eq "main QML pluginId matches plugin.json" "$EXPECTED_ID" "$QML_ID"
 SETTINGS_ID=$(grep -oP 'pluginId:\s*"\K[^"]+' "$SETTINGS")
 assert_eq "settings QML pluginId matches plugin.json" "$EXPECTED_ID" "$SETTINGS_ID"
 
+# ── release workflow regression checks ────────────────────────────────
+
+echo "release workflow"
+WORKFLOW=".github/workflows/ci.yml"
+
+[ -f "$WORKFLOW" ] && pass "workflow file exists ($WORKFLOW)" || fail "workflow" "$WORKFLOW not found"
+
+if grep -qF 'gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${VERSION}"' "$WORKFLOW"; then
+    fail "release workflow" "auto-tag step must not query a release before it is created"
+else
+    pass "release workflow avoids pre-release lookup"
+fi
+
+WORKFLOW_CONTENT=$(cat "$WORKFLOW")
+assert_contains "release workflow checks for an existing release" 'gh release view "${VERSION}"' "$WORKFLOW_CONTENT"
+assert_contains "release workflow creates missing releases" 'gh release create "${VERSION}"' "$WORKFLOW_CONTENT"
+
 # ── summary ──────────────────────────────────────────────────────────
 
 echo ""
